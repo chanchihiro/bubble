@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>D3jsを使った棒グラフ作成</title>
+        <meta charset="utf-8" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+    </head>
+    <body>
+        <div id="canvas"></div>
+        
+        <script type="text/javascript">
+            var svgWidth = 700;　//描画するキャンバス幅(*)
+            var svgHeight = 700; //描画するキャンバス高さ(*)
+            var circleMax = 500; //この直径のサークル内に収める(*)
+            var random_color = Math.floor(Math.random() * 0xFFFFFF).toString(16);
+            
+            var svg = d3.select("#canvas")
+                        .append("svg") //svgタグを作成
+                        .attr("width", svgWidth) //svg(キャンバス)の幅
+                        .attr("height", svgHeight); //svg(キャンバス)の高さ
+            
+            // CSV の読み込み(*)
+            d3.csv('barley_top15_2010_color.csv', function(csvdata){
+                //バブルチャートのルールを決めている
+                var pack = d3.pack()
+                    .size([circleMax, circleMax])
+                    .padding(3); //円同士の隙間(*)
+                
+                //データ構造を決定させている
+                var root = d3.hierarchy({children: csvdata})
+                    .sum(function(d){
+                        return d["value"]; //円のサイズに使用する項目の指定(*)
+                    });
+                
+                //円を描く位置を自動的に決定させている
+                var node = d3.select('svg').selectAll('.node')
+                    .data(pack(root).leaves())
+                    .enter()
+                    .append('g')
+                    .attr("class", "node")
+                    .attr('transform', function(d){
+                        return "translate(" + d.x + "," + d.y + ")";
+                    });
+                
+                //円を描画する
+                node.append('circle')
+                    .attr('r', 0) //円の半径の初期値
+                    .style('fill', function(d){
+                        return d.data["color"]
+                    }) //色指定(*)
+                    .transition() //アニメーションの設定
+                    .duration(1000) //何ミリ秒かけてアニメーションさせるか(*)
+                    .delay(function(d, i){
+                        return i * 100; //何ミリ秒アニメーションを遅らせるか(*)
+                    })
+                    .attr('r', function(d){
+                        return d.r; //円の半径の最終値
+                    });
+
+                var circles = [];
+                circles = document.getElementsByTagName("circle");
+                console.log(circles);
+                
+                //ラベルを描画する
+                node.append('text')
+                    .attr('font-size', '12px') //文字のサイズ(*)
+                    .attr("dy", "6px") //文字のy軸方向の位置調整（*文字サイズの半分にするとちょうど良い）
+                    .style('fill', '#FFF') //文字色(*)
+                    .style('text-anchor', 'middle') //円の中央に描画されるように
+                    .text(function(d){
+                        return d.data['gn:countryCode']; //ラベルに使用する項目の指定(*)
+                    });
+            });
+            
+        </script>
+    </body>
+</html>
